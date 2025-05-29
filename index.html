@@ -1,105 +1,158 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Study Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {}
-      }
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-
-<body class="bg-white text-black dark:bg-gray-900 dark:text-white min-h-screen p-4">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">📚 Study Tracker</h1>
-      <button onclick="toggleDark()" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded shadow">
-        Toggle Dark Mode
-      </button>
+<body class="bg-white text-black dark:bg-gray-900 dark:text-white transition duration-300">
+  <div class="p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold">📘 Study Tracker</h1>
+    <div class="flex gap-2 items-center">
+      <button id="exportBtn" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">file_download</button>
+      <label for="importInput" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 cursor-pointer transition">file_upload</label>
+      <input type="file" id="importInput" class="hidden">
+      <button id="themeToggle" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">dark_mode</button>
     </div>
-
-    <div id="app" class="space-y-8"></div>
   </div>
+
+  <div class="flex justify-center space-x-2 mb-4">
+    <button class="tab-button px-4 py-2 bg-blue-500 text-white rounded-full" data-subject="physics">Physics</button>
+    <button class="tab-button px-4 py-2 bg-gray-300 dark:bg-gray-600 dark:text-white rounded-full" data-subject="chemistry">Chemistry</button>
+    <button class="tab-button px-4 py-2 bg-gray-300 dark:bg-gray-600 dark:text-white rounded-full" data-subject="maths">Math</button>
+  </div>
+
+  <div id="subjectProgress" class="text-center font-semibold mb-2"></div>
+  <div id="trackers" class="space-y-6 p-4"></div>
 
   <script>
     const subjects = {
-      Physics: 32,
-      Chemistry: 32,
-      Math: 30
+      physics: 32,
+      chemistry: 32,
+      maths: 30
     };
 
-    const tasks = ["Lecture", "Notes", "DPP", "PYQ", "Revision"];
+    const trackerData = JSON.parse(localStorage.getItem("studyProgress")) || {};
+    const trackersContainer = document.getElementById("trackers");
+    const subjectProgress = document.getElementById("subjectProgress");
 
-    function saveProgress() {
-      localStorage.setItem('study-progress', JSON.stringify(progress));
-    }
+    function generateTracker(subject) {
+      trackersContainer.innerHTML = "";
 
-    function loadProgress() {
-      return JSON.parse(localStorage.getItem('study-progress') || '{}');
-    }
+      let totalTasks = subjects[subject] * 5;
+      let completedTasks = 0;
 
-    let progress = loadProgress();
+      for (let i = 1; i <= subjects[subject]; i++) {
+        const id = `${subject}-chapter-${i}`;
+        const stored = trackerData[id] || {};
 
-    function toggleDark() {
-      document.documentElement.classList.toggle('dark');
-    }
+        const tracker = document.createElement("div");
+        tracker.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-500";
 
-    function render() {
-      const app = document.getElementById('app');
-      app.innerHTML = '';
+        const checkboxes = ["Lecture", "Notes", "DPP", "PYQ", "Revision"].map(type => {
+          const cbId = `${id}-${type}`;
+          if (stored[type]) completedTasks++;
+          return `<label class="inline-flex items-center space-x-2 mr-4">
+                    <input type="checkbox" class="tracker-checkbox" data-id="${id}" data-type="${type}" ${stored[type] ? "checked" : ""}>
+                    <span>${type}</span>
+                  </label>`;
+        }).join("");
 
-      for (const [subject, count] of Object.entries(subjects)) {
-        const section = document.createElement('div');
-        section.innerHTML = `<h2 class="text-2xl font-semibold mb-4">${subject}</h2>`;
+        const chapterCompleted = Object.values(stored).filter(Boolean).length;
+        const progress = (chapterCompleted / 5) * 100;
 
-        for (let i = 1; i <= count; i++) {
-          const chapKey = `${subject}-Chapter${i}`;
-          progress[chapKey] = progress[chapKey] || {};
+        tracker.innerHTML = `
+          <div class="mb-2 flex justify-between items-center">
+            <h2 class="text-lg font-semibold">Chapter ${i}</h2>
+            <div class="w-24 h-2 bg-gray-300 rounded-full">
+              <div class="h-2 bg-green-500 rounded-full" style="width: ${progress}%;"></div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">${checkboxes}</div>
+        `;
 
-          const row = document.createElement('div');
-          row.className = "flex flex-wrap items-center gap-4 mb-2 p-2 rounded border dark:border-gray-700";
-
-          const label = document.createElement('div');
-          label.className = "w-32 font-medium";
-          label.textContent = `Chapter ${i}`;
-          row.appendChild(label);
-
-          tasks.forEach(task => {
-            const id = `${chapKey}-${task}`;
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = progress[chapKey][task] || false;
-            checkbox.className = 'w-4 h-4';
-            checkbox.addEventListener('change', () => {
-              progress[chapKey][task] = checkbox.checked;
-              saveProgress();
-            });
-
-            const taskLabel = document.createElement('label');
-            taskLabel.className = "flex items-center gap-1";
-            taskLabel.appendChild(checkbox);
-            taskLabel.append(task);
-
-            row.appendChild(taskLabel);
-          });
-
-          section.appendChild(row);
-        }
-
-        app.appendChild(section);
+        trackersContainer.appendChild(tracker);
       }
+
+      let overall = Math.round((completedTasks / totalTasks) * 100);
+      subjectProgress.textContent = `${subject.charAt(0).toUpperCase() + subject.slice(1)} Progress: ${overall}%`;
     }
 
-    render();
+    function saveData() {
+      localStorage.setItem("studyProgress", JSON.stringify(trackerData));
+    }
+
+    function launchConfetti(type) {
+      confetti({
+        particleCount: type === "big" ? 100 : 50,
+        spread: type === "big" ? 160 : 70,
+        startVelocity: type === "big" ? 40 : 25,
+        origin: { y: 0.6 },
+      });
+    }
+
+    document.addEventListener("change", function(e) {
+      if (e.target.classList.contains("tracker-checkbox")) {
+        const id = e.target.dataset.id;
+        const type = e.target.dataset.type;
+        if (!trackerData[id]) trackerData[id] = {};
+        trackerData[id][type] = e.target.checked;
+        saveData();
+
+        const completed = Object.values(trackerData[id]).filter(Boolean).length;
+        if (e.target.checked) launchConfetti("small");
+        if (completed === 5) launchConfetti("big");
+        generateTracker(currentSubject);
+      }
+    });
+
+    let currentSubject = localStorage.getItem("currentSubject") || "physics";
+    generateTracker(currentSubject);
+
+    document.querySelectorAll(".tab-button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentSubject = btn.dataset.subject;
+        localStorage.setItem("currentSubject", currentSubject);
+        document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("bg-blue-500", "text-white"));
+        btn.classList.add("bg-blue-500", "text-white");
+        generateTracker(currentSubject);
+      });
+    });
+
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(trackerData)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "study-progress.json";
+      a.click();
+    });
+
+    document.getElementById("importInput").addEventListener("change", (e) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const data = JSON.parse(event.target.result);
+          Object.assign(trackerData, data);
+          saveData();
+          generateTracker(currentSubject);
+        } catch (err) {
+          alert("Invalid file format");
+        }
+      };
+      reader.readAsText(e.target.files[0]);
+    });
   </script>
 </body>
-
 </html>
