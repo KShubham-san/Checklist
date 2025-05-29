@@ -16,12 +16,19 @@
 <body class="bg-white text-black dark:bg-gray-900 dark:text-white transition duration-300">
   <div class="p-4 flex justify-between items-center">
     <h1 class="text-2xl font-bold">📘 Study Tracker</h1>
-    <div class="flex gap-2 items-center">
-      <button id="exportBtn" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">file_download</button>
-      <label for="importInput" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 cursor-pointer transition">file_upload</label>
-      <input type="file" id="importInput" class="hidden">
-      <button id="themeToggle" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">dark_mode</button>
-    </div>
+    <div class="flex gap-2 items-center relative">
+  <button id="themeToggle" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">
+    light_mode
+  </button>
+  <button id="menuToggle" class="material-icons p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 transition">more_vert</button>
+  <div id="menu" class="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 hidden z-50">
+    <button id="exportJson" class="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Export JSON</button>
+    <button id="exportPdf" class="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Export PDF</button>
+    <label for="importInput" class="block w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">Import JSON</label>
+    <input type="file" id="importInput" class="hidden">
+  </div>
+</div>
+
   </div>
 
   <div class="flex justify-center flex-wrap gap-2 mb-4">
@@ -128,6 +135,12 @@
         if (e.target.checked) launchConfetti("small");
         if (completed === boxOrder.length) launchConfetti("big");
         generateTracker(currentSubject);
+        // highlight the correct tab on load
+document.querySelectorAll(".tab-button").forEach(b => {
+  b.classList.remove("bg-blue-500", "text-white", "dark:bg-blue-700");
+});
+document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classList.add("bg-blue-500", "text-white", "dark:bg-blue-700");
+
       }
     });
 
@@ -169,6 +182,51 @@
       };
       reader.readAsText(e.target.files[0]);
     });
+    // 3-dot menu toggle
+const menuToggle = document.getElementById("menuToggle");
+const menu = document.getElementById("menu");
+
+menuToggle.addEventListener("click", () => {
+  menu.classList.toggle("hidden");
+});
+
+document.addEventListener("click", (e) => {
+  if (!menu.contains(e.target) && e.target !== menuToggle) {
+    menu.classList.add("hidden");
+  }
+});
+
+// Export JSON logic
+document.getElementById("exportJson").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(trackerData)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "study-progress.json";
+  a.click();
+});
+
+// Placeholder PDF export
+document.getElementById("exportPdf").addEventListener("click", () => {
+  alert("Export to PDF coming soon 😎");
+});
+
+// Import logic stays the same, no change needed.
+
+// 🌗 Icon toggle based on mode
+const themeToggle = document.getElementById("themeToggle");
+
+function updateThemeIcon() {
+  const isDark = document.documentElement.classList.contains("dark");
+  themeToggle.innerText = isDark ? "light_mode" : "dark_mode";
+}
+
+themeToggle.addEventListener("click", () => {
+  document.documentElement.classList.toggle("dark");
+  updateThemeIcon();
+});
+
+updateThemeIcon(); // Initial icon on load
+
   </script>
 </body>
 </html>
