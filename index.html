@@ -20,12 +20,11 @@
   </div>
 
   <div class="flex justify-center space-x-2 mb-4">
-    <button class="tab-button px-4 py-2 bg-blue-500 text-white rounded-full" data-subject="physics">Physics</button>
-    <button class="tab-button px-4 py-2 bg-gray-300 dark:bg-gray-600 dark:text-white rounded-full" data-subject="chemistry">Chemistry</button>
-    <button class="tab-button px-4 py-2 bg-gray-300 dark:bg-gray-600 dark:text-white rounded-full" data-subject="maths">Math</button>
+    <button class="tab-button px-4 py-2 rounded-full" data-subject="physics">Physics</button>
+    <button class="tab-button px-4 py-2 rounded-full" data-subject="chemistry">Chemistry</button>
+    <button class="tab-button px-4 py-2 rounded-full" data-subject="maths">Math</button>
   </div>
 
-  <div id="subjectProgress" class="text-center font-semibold mb-2"></div>
   <div id="trackers" class="space-y-6 p-4"></div>
 
   <script>
@@ -35,15 +34,12 @@
       maths: 30
     };
 
+    const taskOrder = ["Notes", "HW", "DPP", "Qs practice", "PYQ", "Module"];
     const trackerData = JSON.parse(localStorage.getItem("studyProgress")) || {};
     const trackersContainer = document.getElementById("trackers");
-    const subjectProgress = document.getElementById("subjectProgress");
 
     function generateTracker(subject) {
       trackersContainer.innerHTML = "";
-
-      let totalTasks = subjects[subject] * 5;
-      let completedTasks = 0;
 
       for (let i = 1; i <= subjects[subject]; i++) {
         const id = `${subject}-chapter-${i}`;
@@ -52,17 +48,16 @@
         const tracker = document.createElement("div");
         tracker.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-500";
 
-        const checkboxes = ["Lecture", "Notes", "DPP", "PYQ", "Revision"].map(type => {
+        const checkboxes = taskOrder.map(type => {
           const cbId = `${id}-${type}`;
-          if (stored[type]) completedTasks++;
           return `<label class="inline-flex items-center space-x-2 mr-4">
                     <input type="checkbox" class="tracker-checkbox" data-id="${id}" data-type="${type}" ${stored[type] ? "checked" : ""}>
                     <span>${type}</span>
                   </label>`;
         }).join("");
 
-        const chapterCompleted = Object.values(stored).filter(Boolean).length;
-        const progress = (chapterCompleted / 5) * 100;
+        const completed = taskOrder.filter(t => stored[t]).length;
+        const progress = (completed / taskOrder.length) * 100;
 
         tracker.innerHTML = `
           <div class="mb-2 flex justify-between items-center">
@@ -73,12 +68,8 @@
           </div>
           <div class="flex flex-wrap gap-2">${checkboxes}</div>
         `;
-
         trackersContainer.appendChild(tracker);
       }
-
-      let overall = Math.round((completedTasks / totalTasks) * 100);
-      subjectProgress.textContent = `${subject.charAt(0).toUpperCase() + subject.slice(1)} Progress: ${overall}%`;
     }
 
     function saveData() {
@@ -87,10 +78,10 @@
 
     function launchConfetti(type) {
       confetti({
-        particleCount: type === "big" ? 100 : 50,
-        spread: type === "big" ? 160 : 70,
-        startVelocity: type === "big" ? 40 : 25,
-        origin: { y: 0.6 },
+        particleCount: type === "small" ? 50 : 100,
+        spread: type === "small" ? 70 : 160,
+        startVelocity: type === "small" ? undefined : 40,
+        origin: { y: type === "small" ? 0.6 : 0.7 },
       });
     }
 
@@ -102,33 +93,45 @@
         trackerData[id][type] = e.target.checked;
         saveData();
 
-        const completed = Object.values(trackerData[id]).filter(Boolean).length;
+        const completed = taskOrder.filter(t => trackerData[id][t]).length;
         if (e.target.checked) launchConfetti("small");
-        if (completed === 5) launchConfetti("big");
+        if (completed === taskOrder.length) launchConfetti("big");
         generateTracker(currentSubject);
       }
     });
 
-    let currentSubject = localStorage.getItem("currentSubject") || "physics";
+    let currentSubject = "physics";
     generateTracker(currentSubject);
+    highlightTab(currentSubject);
 
     document.querySelectorAll(".tab-button").forEach(btn => {
       btn.addEventListener("click", () => {
         currentSubject = btn.dataset.subject;
-        localStorage.setItem("currentSubject", currentSubject);
-        document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("bg-blue-500", "text-white"));
-        btn.classList.add("bg-blue-500", "text-white");
         generateTracker(currentSubject);
+        highlightTab(currentSubject);
       });
     });
 
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark');
+    function highlightTab(subject) {
+      document.querySelectorAll(".tab-button").forEach(b => {
+        if (b.dataset.subject === subject) {
+          b.classList.add("bg-blue-500", "text-white");
+          b.classList.remove("bg-gray-300", "dark:bg-gray-600", "dark:text-white");
+        } else {
+          b.classList.remove("bg-blue-500", "text-white");
+          b.classList.add("bg-gray-300", "dark:bg-gray-600", "dark:text-white");
+        }
+      });
     }
 
     document.getElementById("themeToggle").addEventListener("click", () => {
       document.body.classList.toggle("dark");
-      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark") document.body.classList.add("dark");
     });
 
     document.getElementById("exportBtn").addEventListener("click", () => {
