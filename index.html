@@ -169,9 +169,7 @@ document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classLi
       });
     });
 
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-    });
+    
 
    
     document.getElementById("importInput").addEventListener("change", (e) => {
@@ -213,9 +211,10 @@ document.getElementById("exportJson").addEventListener("click", () => {
 
 document.getElementById("exportPdf").addEventListener("click", () => {
   const pdfArea = document.getElementById("pdfExportArea");
+  pdfArea.classList.remove("hidden"); // show it!
+
   pdfArea.innerHTML = ""; // clear previous content
 
-  // Copy current subject's tracker
   const title = document.createElement("h1");
   title.innerText = `${currentSubject[0].toUpperCase() + currentSubject.slice(1)} Study Tracker 📘`;
   title.className = "text-2xl font-bold mb-4";
@@ -235,9 +234,10 @@ document.getElementById("exportPdf").addEventListener("click", () => {
     jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
 
-  html2pdf().from(pdfArea).set(opt).save();
+  html2pdf().from(pdfArea).set(opt).save().then(() => {
+    pdfArea.classList.add("hidden"); // hide it again after export
+  });
 });
-
 
 // Import logic stays the same, no change needed.
 
