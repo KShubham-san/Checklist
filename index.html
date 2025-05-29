@@ -145,7 +145,10 @@ document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classLi
     });
 
     let currentSubject = "physics";
-    generateTracker(currentSubject);
+generateTracker(currentSubject);
+
+// ✅ Add this:
+document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classList.add("bg-blue-500", "text-white", "dark:bg-blue-700");
 
     document.querySelectorAll(".tab-button").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -160,14 +163,7 @@ document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classLi
       document.documentElement.classList.toggle("dark");
     });
 
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(trackerData)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "study-progress.json";
-      a.click();
-    });
-
+   
     document.getElementById("importInput").addEventListener("change", (e) => {
       const reader = new FileReader();
       reader.onload = function(event) {
