@@ -83,39 +83,47 @@
 
     const boxOrder = ["Notes", "HW", "DPP", "Qs practice", "PYQ", "Module"];
 
-    function generateTracker(subject) {
-      trackersContainer.innerHTML = "";
+   function generateTracker(subject) {
+  trackersContainer.innerHTML = "";
 
-      subjects[subject].forEach((chapter, index) => {
-        const id = `${subject}-chapter-${index + 1}`;
-        const stored = trackerData[id] || {};
+  subjects[subject].forEach((chapter, index) => {
+    const id = `${subject}-chapter-${index + 1}`;
+    const stored = trackerData[id] || {};
 
-        const tracker = document.createElement("div");
-        tracker.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-500";
+    const tracker = document.createElement("div");
+    tracker.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-500";
 
-        const checkboxes = boxOrder.map(type => {
-          return `<label class="inline-flex items-center gap-2 mr-4 text-sm sm:text-base">
-          <input type="checkbox" class="tracker-checkbox w-4 h-4 sm:w-5 sm:h-5 accent-blue-500" data-id="${id}" data-type="${type}" ${stored[type] ? "checked" : ""}>
+    // Checkboxes grid HTML
+    const checkboxes = boxOrder.map(type => {
+      return `<div>
+        <label class="flex items-center gap-2 text-sm sm:text-base">
+          <input 
+            type="checkbox" 
+            class="tracker-checkbox w-4 h-4 sm:w-5 sm:h-5 accent-blue-500" 
+            data-id="${id}" 
+            data-type="${type}" 
+            ${stored[type] ? "checked" : ""}>
           <span>${type}</span>
-        </label>`;
+        </label>
+      </div>`;
+    }).join("");
 
-        }).join("");
+    const completed = Object.values(stored).filter(Boolean).length;
+    const progress = (completed / boxOrder.length) * 100;
 
-        const completed = Object.values(stored).filter(Boolean).length;
-        const progress = (completed / boxOrder.length) * 100;
+    tracker.innerHTML = `
+      <div class="mb-2 flex justify-between items-center">
+        <h2 class="text-lg font-semibold">${chapter}</h2>
+        <div class="w-24 h-2 bg-gray-300 rounded-full">
+          <div class="h-2 bg-green-500 rounded-full" style="width: ${progress}%;"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">${checkboxes}</div>
+    `;
 
-        tracker.innerHTML = `
-          <div class="mb-2 flex justify-between items-center">
-            <h2 class="text-lg font-semibold">${chapter}</h2>
-            <div class="w-24 h-2 bg-gray-300 rounded-full">
-              <div class="h-2 bg-green-500 rounded-full" style="width: ${progress}%;"></div>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-2">${checkboxes}</div>
-        `;
-        trackersContainer.appendChild(tracker);
-      });
-    }
+    trackersContainer.appendChild(tracker);
+  });
+}
 
     function saveData() {
       localStorage.setItem("studyProgress", JSON.stringify(trackerData));
@@ -129,26 +137,36 @@
       }
     }
 
-    document.addEventListener("change", function(e) {
-      if (e.target.classList.contains("tracker-checkbox")) {
-        const id = e.target.dataset.id;
-        const type = e.target.dataset.type;
-        if (!trackerData[id]) trackerData[id] = {};
-        trackerData[id][type] = e.target.checked;
-        saveData();
+document.addEventListener("change", function(e) {
+  if (e.target.classList.contains("tracker-checkbox")) {
+    const id = e.target.dataset.id;
+    const type = e.target.dataset.type;
+    if (!trackerData[id]) trackerData[id] = {};
+    trackerData[id][type] = e.target.checked;
 
-        const completed = Object.values(trackerData[id]).filter(Boolean).length;
-        if (e.target.checked) launchConfetti("small");
-        if (completed === boxOrder.length) launchConfetti("big");
-        generateTracker(currentSubject);
-        // highlight the correct tab on load
-document.querySelectorAll(".tab-button").forEach(b => {
-  b.classList.remove("bg-blue-500", "text-white", "dark:bg-blue-700");
-});
-document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classList.add("bg-blue-500", "text-white", "dark:bg-blue-700");
+    // 🔊 Play click sound
+    document.getElementById("clickSound").play();
 
-      }
+    saveData();
+
+    const completed = Object.values(trackerData[id]).filter(Boolean).length;
+
+    if (e.target.checked) launchConfetti("small");
+    if (completed === boxOrder.length) {
+      launchConfetti("big");
+      
+      // 🔊 Play complete sound
+      document.getElementById("completeSound").play();
+    }
+
+    generateTracker(currentSubject);
+
+    document.querySelectorAll(".tab-button").forEach(b => {
+      b.classList.remove("bg-blue-500", "text-white", "dark:bg-blue-700");
     });
+    document.querySelector(`.tab-button[data-subject="${currentSubject}"]`)?.classList.add("bg-blue-500", "text-white", "dark:bg-blue-700");
+  }
+});
 
     let currentSubject = "physics";
 generateTracker(currentSubject);
@@ -254,6 +272,9 @@ updateThemeIcon(); // Initial icon on load
 
   </script>
   <div id="pdfExportArea" class="hidden"></div>
+  <audio id="clickSound" src="click.mp3"></audio>
+<audio id="completeSound" src="complete.mp3"></audio>
+
 
 </body>
 </html>
