@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {}
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-white text-black dark:bg-gray-900 dark:text-white min-h-screen p-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">📚 Study Tracker</h1>
+      <button onclick="toggleDark()" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded shadow">
+        Toggle Dark Mode
+      </button>
+    </div>
+
+    <div id="app" class="space-y-8"></div>
+  </div>
+
+  <script>
+    const subjects = {
+      Physics: 32,
+      Chemistry: 32,
+      Math: 30
+    };
+
+    const tasks = ["Lecture", "Notes", "DPP", "PYQ", "Revision"];
+
+    function saveProgress() {
+      localStorage.setItem('study-progress', JSON.stringify(progress));
+    }
+
+    function loadProgress() {
+      return JSON.parse(localStorage.getItem('study-progress') || '{}');
+    }
+
+    let progress = loadProgress();
+
+    function toggleDark() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+
+      for (const [subject, count] of Object.entries(subjects)) {
+        const section = document.createElement('div');
+        section.innerHTML = `<h2 class="text-2xl font-semibold mb-4">${subject}</h2>`;
+
+        for (let i = 1; i <= count; i++) {
+          const chapKey = `${subject}-Chapter${i}`;
+          progress[chapKey] = progress[chapKey] || {};
+
+          const row = document.createElement('div');
+          row.className = "flex flex-wrap items-center gap-4 mb-2 p-2 rounded border dark:border-gray-700";
+
+          const label = document.createElement('div');
+          label.className = "w-32 font-medium";
+          label.textContent = `Chapter ${i}`;
+          row.appendChild(label);
+
+          tasks.forEach(task => {
+            const id = `${chapKey}-${task}`;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = progress[chapKey][task] || false;
+            checkbox.className = 'w-4 h-4';
+            checkbox.addEventListener('change', () => {
+              progress[chapKey][task] = checkbox.checked;
+              saveProgress();
+            });
+
+            const taskLabel = document.createElement('label');
+            taskLabel.className = "flex items-center gap-1";
+            taskLabel.appendChild(checkbox);
+            taskLabel.append(task);
+
+            row.appendChild(taskLabel);
+          });
+
+          section.appendChild(row);
+        }
+
+        app.appendChild(section);
+      }
+    }
+
+    render();
+  </script>
+</body>
+
+</html>
