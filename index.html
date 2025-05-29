@@ -7,6 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    html.dark {
+      background-color: #1f2937;
+      color: white;
+    }
+  </style>
 </head>
 <body class="bg-white text-black dark:bg-gray-900 dark:text-white transition duration-300">
   <div class="p-4 flex justify-between items-center">
@@ -29,26 +35,25 @@
 
   <script>
     const subjects = {
-      physics: 32,
-      chemistry: 32,
-      maths: 30
+      physics: ["Mathematical Tools", "Motion in a Straight Line", "Motion in a Plane", "Relative Motion", "Laws of Motion", "Work, Energy and Power", "Circular Motion", "Centre of Mass & System of Particles", "Rotational Motion", "Oscillations", "Ray Optics and Optical Instruments", "Dual Nature", "Atoms", "Nuclei", "Thermal Properties of Matter", "Kinetic Theory", "Thermodynamics", "Mechanical Properties of Solids", "Mechanical Properties of Fluids", "Electric Charges and Fields & Potential", "Gravitation", "Current Electricity", "Electrostatic Potential and Capacitance", "Moving Charges and Magnetism", "Magnetism and Matter", "Electromagnetic Induction", "Alternating Current", "Waves", "Electromagnetic Waves", "Wave Optics", "Semiconductor Electronics: Materials, Devices and Simple Circuits", "Units and Measurements"],
+      chemistry: ["Some Basic Concepts of Chemistry", "Redox Reaction", "Solutions", "Chemical Kinetics", "Thermodynamics", "Chemical Equilibrium", "Ionic Equilibrium", "Electrochemistry", "Structure of Atom", "State of Matter", "The Solid State", "Surface Chemistry", "Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "Coordination Compounds", "Principles of Qualitative Analysis (Salt Analysis)", "P-block Elements", "The d- and f-Block Elements", "General Principles and Processes of Isolation of Metals", "Hydrogen and its Compounds", "S-block Element", "Some Basic Principles and Techniques (IUPAC)", "General Organic Chemistry", "Isomerism", "Hydrocarbons", "Haloalkanes and Haloarenes", "Alcohols, Phenols and Ethers", "Aldehydes, Ketones and Carboxylic Acids", "Amines", "Biomolecules", "Polymers", "Chemistry in Everyday Life"],
+      maths: ["Basic Mathematics", "Quadratic Equations", "Sequence and Series", "Trigonometric Functions", "Trigonometric Equations", "Permutations and Combinations", "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections: Parabola", "Conic Sections: Ellipse", "Conic Sections: Hyperbola", "Determinants", "Matrices", "Sets", "Relations and Functions", "Inverse Trigonometric Functions", "Limit, Continuity and Differentiability", "Method of Differentiation", "Application of Derivatives", "Indefinite Integration", "Definite Integration", "Application of Integrals", "Differential Equation", "Vector Algebra", "Three Dimensional Geometry", "Complex Number", "Probability", "Statistics", "Solution of Triangle"]
     };
 
-    const taskOrder = ["Notes", "HW", "DPP", "Qs practice", "PYQ", "Module"];
     const trackerData = JSON.parse(localStorage.getItem("studyProgress")) || {};
     const trackersContainer = document.getElementById("trackers");
 
     function generateTracker(subject) {
       trackersContainer.innerHTML = "";
-
-      for (let i = 1; i <= subjects[subject]; i++) {
-        const id = `${subject}-chapter-${i}`;
+      subjects[subject].forEach((chapterName, i) => {
+        const id = `${subject}-chapter-${i + 1}`;
         const stored = trackerData[id] || {};
-
         const tracker = document.createElement("div");
         tracker.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-500";
 
-        const checkboxes = taskOrder.map(type => {
+        const types = ["Notes", "HW", "DPP", "Qs practice", "PYQ", "Module"];
+
+        const checkboxes = types.map(type => {
           const cbId = `${id}-${type}`;
           return `<label class="inline-flex items-center space-x-2 mr-4">
                     <input type="checkbox" class="tracker-checkbox" data-id="${id}" data-type="${type}" ${stored[type] ? "checked" : ""}>
@@ -56,20 +61,21 @@
                   </label>`;
         }).join("");
 
-        const completed = taskOrder.filter(t => stored[t]).length;
-        const progress = (completed / taskOrder.length) * 100;
+        const completed = Object.values(stored).filter(Boolean).length;
+        const progress = (completed / types.length) * 100;
 
         tracker.innerHTML = `
           <div class="mb-2 flex justify-between items-center">
-            <h2 class="text-lg font-semibold">Chapter ${i}</h2>
+            <h2 class="text-lg font-semibold">${chapterName}</h2>
             <div class="w-24 h-2 bg-gray-300 rounded-full">
               <div class="h-2 bg-green-500 rounded-full" style="width: ${progress}%;"></div>
             </div>
           </div>
           <div class="flex flex-wrap gap-2">${checkboxes}</div>
         `;
+
         trackersContainer.appendChild(tracker);
-      }
+      });
     }
 
     function saveData() {
@@ -78,10 +84,10 @@
 
     function launchConfetti(type) {
       confetti({
-        particleCount: type === "small" ? 50 : 100,
-        spread: type === "small" ? 70 : 160,
-        startVelocity: type === "small" ? undefined : 40,
-        origin: { y: type === "small" ? 0.6 : 0.7 },
+        particleCount: type === "big" ? 100 : 50,
+        spread: type === "big" ? 160 : 70,
+        startVelocity: type === "big" ? 40 : undefined,
+        origin: { y: 0.7 },
       });
     }
 
@@ -92,46 +98,26 @@
         if (!trackerData[id]) trackerData[id] = {};
         trackerData[id][type] = e.target.checked;
         saveData();
-
-        const completed = taskOrder.filter(t => trackerData[id][t]).length;
+        const completed = Object.values(trackerData[id]).filter(Boolean).length;
         if (e.target.checked) launchConfetti("small");
-        if (completed === taskOrder.length) launchConfetti("big");
+        if (completed === 6) launchConfetti("big");
         generateTracker(currentSubject);
       }
     });
 
     let currentSubject = "physics";
-    generateTracker(currentSubject);
-    highlightTab(currentSubject);
 
     document.querySelectorAll(".tab-button").forEach(btn => {
       btn.addEventListener("click", () => {
         currentSubject = btn.dataset.subject;
+        document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("bg-blue-500", "text-white"));
+        btn.classList.add("bg-blue-500", "text-white");
         generateTracker(currentSubject);
-        highlightTab(currentSubject);
       });
     });
-
-    function highlightTab(subject) {
-      document.querySelectorAll(".tab-button").forEach(b => {
-        if (b.dataset.subject === subject) {
-          b.classList.add("bg-blue-500", "text-white");
-          b.classList.remove("bg-gray-300", "dark:bg-gray-600", "dark:text-white");
-        } else {
-          b.classList.remove("bg-blue-500", "text-white");
-          b.classList.add("bg-gray-300", "dark:bg-gray-600", "dark:text-white");
-        }
-      });
-    }
 
     document.getElementById("themeToggle").addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-    });
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark") document.body.classList.add("dark");
+      document.documentElement.classList.toggle("dark");
     });
 
     document.getElementById("exportBtn").addEventListener("click", () => {
@@ -156,6 +142,9 @@
       };
       reader.readAsText(e.target.files[0]);
     });
+
+    generateTracker(currentSubject);
+    document.querySelector('[data-subject="physics"]').classList.add("bg-blue-500", "text-white");
   </script>
 </body>
 </html>
